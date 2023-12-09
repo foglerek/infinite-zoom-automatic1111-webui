@@ -88,6 +88,7 @@ def outpaint_steps(
     out_config,
     mask_width,
     mask_height,
+    script_custom_inputs,
     custom_exit_image,
     frame_correction=True,  # TODO: add frame_Correction in UI
 ):
@@ -137,6 +138,7 @@ def outpaint_steps(
                 inpainting_fill_mode,
                 inpainting_full_res,
                 inpainting_padding,
+                script_custom_inputs,
             )
 
             if len(processed.images) > 0:
@@ -190,11 +192,16 @@ def create_zoom(
     upscale_do,
     upscaler_name,
     upscale_by,
-    inpainting_denoising_strength=1,
-    inpainting_full_res=0,
-    inpainting_padding=0,
-    progress=None,
+    mask_width,
+    mask_height,
+    *args,
 ):
+    inpainting_denoising_strength = 1
+    inpainting_full_res = 0
+    inpainting_padding = 0
+    progress = None
+    script_custom_inputs = args
+
     for i in range(batchcount):
         print(f"Batch {i+1}/{batchcount}")
         result = create_zoom_single(
@@ -221,6 +228,9 @@ def create_zoom(
             upscale_do,
             upscaler_name,
             upscale_by,
+            mask_width,
+            mask_height,
+            script_custom_inputs,
             inpainting_denoising_strength,
             inpainting_full_res,
             inpainting_padding,
@@ -312,6 +322,9 @@ def create_zoom_single(
     upscale_do,
     upscaler_name,
     upscale_by,
+    mask_width_pct,
+    mask_height_pct,
+    script_custom_inputs,
     inpainting_denoising_strength,
     inpainting_full_res,
     inpainting_padding,
@@ -368,14 +381,15 @@ def create_zoom_single(
             current_seed,
             width,
             height,
+            script_custom_inputs,
         )
         if len(processed.images) > 0:
             current_image = processed.images[0]
             save2Collect(current_image, out_config, f"init_txt2img.png")
         current_seed = newseed
 
-    mask_width = math.trunc(width / 4)  # was initially 512px => 128px
-    mask_height = math.trunc(height / 4)  # was initially 512px => 128px
+    mask_width = math.trunc((mask_width_pct / 100) * width)  # was initially 512px => 128px
+    mask_height = math.trunc((mask_height_pct / 100) * height)  # was initially 512px => 128px
 
     num_interpol_frames = round(video_frame_rate * zoom_speed)
 
@@ -408,6 +422,7 @@ def create_zoom_single(
         out_config,
         mask_width,
         mask_height,
+        script_custom_inputs,
         custom_exit_image,
     )
     all_frames.append(

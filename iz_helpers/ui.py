@@ -1,8 +1,10 @@
 import gradio as gr
 from .run import create_zoom
 import modules.shared as shared
+import modules.scripts as scripts
 from modules.call_queue import wrap_gradio_gpu_call
 from modules.ui import create_output_panel
+from modules.ui_components import FormGroup
 
 from .static_variables import (
     default_prompt,
@@ -219,6 +221,18 @@ def on_ui_tabs():
                         maximum=64,
                         value=default_mask_blur,
                     )
+                    mask_width = gr.Slider(
+                        label="Mask Width (%)",
+                        minimum=1,
+                        maximum=100,
+                        value=25
+                    )
+                    mask_height = gr.Slider(
+                        label="Mask Height (%)",
+                        minimum=1,
+                        maximum=100,
+                        value=25
+                    )
                     inpainting_fill_mode = gr.Radio(
                         label="Masked content",
                         choices=["fill", "original", "latent noise", "latent nothing"],
@@ -244,10 +258,13 @@ def on_ui_tabs():
                     with gr.Accordion("Help", open=False):
                         gr.Markdown(
                             """# Performance critical
-Depending on amount of frames and which upscaler you choose it might took a long time to render.  
+Depending on amount of frames and which upscaler you choose it might took a long time to render.
 Our best experience and trade-off is the R-ERSGAn4x upscaler.
 """
                         )
+
+                with FormGroup(elem_id=f"script_container"):
+                    script_custom_inputs = scripts.scripts_img2img.setup_ui()
 
             with gr.Column(scale=1, variant="compact"):
                 output_video = gr.Video(label="Output").style(width=512, height=512)
@@ -260,9 +277,7 @@ Our best experience and trade-off is the R-ERSGAn4x upscaler.
                     "infinite-zoom", shared.opts.outdir_img2img_samples
                 )
 
-        generate_btn.click(
-            fn=wrap_gradio_gpu_call(create_zoom, extra_outputs=[None, "", ""]),
-            inputs=[
+        inputs = [
                 main_common_prompt_pre,
                 main_prompts,
                 main_common_prompt_suf,
@@ -287,7 +302,13 @@ Our best experience and trade-off is the R-ERSGAn4x upscaler.
                 upscale_do,
                 upscaler_name,
                 upscale_by,
-            ],
+                mask_width,
+                mask_height,
+            ] + script_custom_inputs
+
+        generate_btn.click(
+            fn=wrap_gradio_gpu_call(create_zoom, extra_outputs=[None, "", ""]),
+            inputs=inputs,
             outputs=[output_video, out_image, generation_info, html_info, html_log],
         )
 
