@@ -4,10 +4,11 @@ from modules.processing import (
     StableDiffusionProcessingImg2Img,
 )
 import modules.shared as shared
+import modules.scripts
 
 
 def renderTxt2Img(
-    prompt, negative_prompt, sampler, steps, cfg_scale, seed, width, height
+    prompt, negative_prompt, sampler, steps, cfg_scale, seed, width, height, script_custom_inputs,
 ):
     processed = None
     p = StableDiffusionProcessingTxt2Img(
@@ -24,6 +25,8 @@ def renderTxt2Img(
         width=width,
         height=height,
     )
+    p.scripts = modules.scripts.scripts_txt2img
+    p.script_args = script_custom_inputs
     processed = process_images(p)
     newseed = p.seed
     return processed, newseed
@@ -45,6 +48,7 @@ def renderImg2Img(
     inpainting_fill_mode,
     inpainting_full_res,
     inpainting_padding,
+    script_custom_inputs,
 ):
     processed = None
 
@@ -69,6 +73,9 @@ def renderImg2Img(
         inpaint_full_res_padding=inpainting_padding,
         mask=mask_image,
     )
+    p.scripts = modules.scripts.scripts_img2img
+    p.script_args = script_custom_inputs
+
     # p.latent_mask = Image.new("RGB", (p.width, p.height), "white")
     
     processed = process_images(p)
